@@ -4,16 +4,18 @@ class pluginUnderConstructionOrMaintenance extends Plugin {
 
 	public function init()
 	{
+	    global $site;
 		$this->dbFields = array(
 			'enable'=>false,
 			'allowLoggedInUser'=>true,
 			'allowedUserRoles'=>'admin', // all => For everyone, <role name> => comma seperated values
 			'modeType'=>'underconstruction_bg.jpg',
-			'title'=>explode("</title>",explode("<title>", Theme::metaTags('title'))[1])[0],
+			'title'=>is_null($site->title()) && is_null($site->description()) ? "Title of the page..." : $site->title()." | ".$site->description(),
 			'message'=>'We are cooking something awesome!',
 			'subMessage'=>'We are expecting to become available by tomorrow.',
 			'contactEmail'=>'youremail@site.com',
-			'contactNumber'=>'+XX XXXX XXXX XX'
+			'contactNumber'=>'+XX XXXX XXXX XX',
+			'customHeader'=>""
 		);
 		if (!isset($login)) {
             $login = new Login();
@@ -22,7 +24,7 @@ class pluginUnderConstructionOrMaintenance extends Plugin {
 
 	public function form()
 	{
-		global $L;
+		global $L, $site;
 
 		$html  = '<div class="alert alert-primary" role="alert">';
 		$html .= $this->description();
@@ -70,7 +72,7 @@ class pluginUnderConstructionOrMaintenance extends Plugin {
 
 		$html .= '<div>';
 		$html .= '<label>'.$L->get('Title').' *</label>';
-		$html .= '<input name="title" id="jstitle" type="text" value="'.$this->getValue('title').'" required placeholder="'.explode("</title>",explode("<title>", Theme::metaTags('title'))[1])[0].'">';
+		$html .= '<input name="title" id="jstitle" type="text" value="'.$this->getValue('title').'" required placeholder="'.  $site->title()." | ".$site->description() .'">';
 		$html .= '</div>';
 
 		$html .= '<div>';
@@ -93,6 +95,13 @@ class pluginUnderConstructionOrMaintenance extends Plugin {
 		$html .= '<input name="contactNumber" id="jscontactNumber" type="text" value="'.$this->getValue('contactNumber').'" placeholder="Contact number (optional) e.g., +XX XXXX XXXX XX">';
 		$html .= '</div>';
 		
+		$html .= '<div>
+		          <label>' . $L->get('Custom Header').'</label>
+		          <textarea name="customHeader" id="jscustomHeader" rows="4" cols="50" placeholder="head tags...">'
+		            . $this->getValue('customHeader')
+		          .'</textarea>
+		          </div>';
+
 		$html .= '<script>';
 		$html .= 'const ucm_allowLoggedInUser = document.getElementById("ucm_allowLoggedInUser"), ucm_allowedUserRoles = document.getElementById("ucm_allowedUserRoles");';
 		$html .= 'ucm_allowLoggedInUser.addEventListener("change", event => {if(event.target.value=="true"){ucm_allowedUserRoles.removeAttribute("disabled");} else {ucm_allowedUserRoles.setAttribute("disabled", true);}});';
@@ -112,6 +121,10 @@ class pluginUnderConstructionOrMaintenance extends Plugin {
 		    $html  = '<!DOCTYPE html><html lang="en"><head>';
 		    
 		    $html .= '<title>'.$this->getValue('title').'</title>';
+		    
+		    if (!is_null($this->getValue('customHeader')) || $this->getValue('customHeader') != '') {
+		        $html .= html_entity_decode($this->getValue('customHeader'));
+		    }
 		    
 		    $html .= '<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />'.PHP_EOL;
 		    $html .= '<link rel="stylesheet" href="' . HTML_PATH_PLUGINS . '01under-construction-maintenance/css/style.css">'.PHP_EOL;
@@ -143,12 +156,9 @@ class pluginUnderConstructionOrMaintenance extends Plugin {
                 $html .= '</p>';
             }
             $html .= '</div></div></div></div><script src="https://code.jquery.com/jquery-1.12.4.min.js" type="text/javascript"></script><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" type="text/javascript"></script></body>';
-            
-
-            
 		    $html .= '</body>';
-			exit( $html );
 
+			exit($html);
 		}
 	}
 }
